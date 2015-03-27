@@ -165,16 +165,14 @@ class User < ActiveRecord::Base
   has_many :user_making_payment_details, :class_name => 'PaymentDetail', :foreign_key => "user_id"
   has_many :artist_recieving_payment_details, :class_name => 'PaymentDetail', :foreign_key => "artist_id"
 
-  has_one :artist_goal, :dependent => :destroy, :autosave => true
-  accepts_nested_attributes_for :artist_goal, :allow_destroy => true
-
+  has_one :artist_goal
   has_many :rewards , :through=>:artist_goals
 
   has_many :opentok_details
   has_many :hangout_medias
 
-  scope :artist_users, -> { where("user_type in (1,2,3)") }
-  scope :crowd_users, -> { where(:user_type => 0) }
+  has_many :supporting_crowds, -> { where('trashed = ?', 0) }, :class_name=>'ArtistCrowdSupportLevel' , :foreign_key=>'artist_id'
+  has_many :supported_artists, -> { where('trashed = ?', 0) }, :class_name=>'ArtistCrowdSupportLevel' , :foreign_key=>'crowd_id'
 
   ## validations ##
   validates :first_name, :last_name, :stage_name,
@@ -188,9 +186,9 @@ class User < ActiveRecord::Base
 
 
   #validates :password_digest,
-   # :presence => true,
-    #:length => {:minimum => 3, :too_short => "%{count} characters is the maximum allowed",
-#                :maximum => 512, :too_long => "%{count} characters is the maximum allowed"}
+  # :presence => true,
+  #:length => {:minimum => 3, :too_short => "%{count} characters is the maximum allowed",
+  #                :maximum => 512, :too_long => "%{count} characters is the maximum allowed"}
 
   validates :email,
   :presence => true,
@@ -223,9 +221,6 @@ class User < ActiveRecord::Base
   def init
     self.user_type = 0 if self.user_type.blank?
     self.trashed = 0 if self.trashed.blank?
-  end
-
-  def to_s
-    self.first_name + " " + self.last_name
+    # @curr_phase = self.phase_id
   end
 end

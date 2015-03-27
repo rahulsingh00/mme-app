@@ -47,8 +47,4 @@ class PhaseLedger < ActiveRecord::Base
 	def self.persist_fields
 		[ "user_id", "phase","trashed", "activated_at", "deactivated_at" ]
 	end
-
-	def to_s
-    	self.phase.to_s
-  end  
 end

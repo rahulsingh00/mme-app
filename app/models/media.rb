@@ -1,6 +1,6 @@
 class Media < ActiveRecord::Base
 
-  DEFAULT_FIELDS_TO_DISPLAY = ['id', 'user_id', 'title', 'desc', 'url', 'media_type', 'meta_data','stats']
+  DEFAULT_FIELDS_TO_DISPLAY = ['id', 'user_id', 'title', 'desc', 'url', 'media_type', 'meta_data','stats','artist_info']
 
   def attributes
     @display_fields ||= DEFAULT_FIELDS_TO_DISPLAY.to_ahash
@@ -33,6 +33,18 @@ class Media < ActiveRecord::Base
   # 0-Image; 1-Audio; 2-Video
   validates :media_type, :inclusion => { :in => [0, 1, 2] }, :presence => true
 
+   def artist_info
+    artist_data={}
+    @user= self.user
+    return artist_data if @user.blank?
+
+    artist_data[:first_name]=@user.first_name
+    artist_data[:last_name]=@user.last_name
+    artist_data[:user_id]=@user.id
+    artist_data[:avatar]=@user.avatar
+    artist_data
+  end
+
   def self.persist_fields
     [ "user_id", "title", "desc", "url", "media_type", "meta_data" ]
   end
@@ -42,6 +54,7 @@ class Media < ActiveRecord::Base
 
   def init
     self.trashed = 0 if self.trashed.blank?
+    @user= self.user
   end
 
 end

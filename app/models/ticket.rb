@@ -1,14 +1,16 @@
+
 class Ticket < ActiveRecord::Base
 
-	DEFAULT_FIELDS_TO_DISPLAY = ['id', 'user_id', 'event_id', 'ticket_token', 'booked_at', 'payment_txn_id', 'discount_token', 'selling_price', 'status']
+	DEFAULT_FIELDS_TO_DISPLAY = ['id', 'user_id', 'event_id', 'ticket_token', 'booked_at', 'payment_txn_id', 'discount_token', 'selling_price', 'status','opentok_role']
 
 	before_save :set_default
 
 	def set_default
-		self.ticket_token = generate_ticket_token
-		self.booked_at=Time.now
+		self.ticket_token = generate_ticket_token if self.ticket_token.blank?
+		self.booked_at=Time.now if self.booked_at.blank?
 		#TODO :: the status has to be handeled properly once payment is implemented
-		self.status ="booked"
+		self.status ="booked" if self.status.blank?
+		#self.opentok_role=OpenTok::RoleConstants::SUBSCRIBER if self.opentok_role.blank?
 	end
 
 	def attributes
@@ -19,6 +21,8 @@ class Ticket < ActiveRecord::Base
 	belongs_to :user
 	belongs_to :event
 	#has_one :payment ,:auto_save=>true
+
+	has_many :opentok_details, primary_key: :ticket_token
 
 	## validations ##
 	validates :ticket_token,
@@ -31,12 +35,21 @@ class Ticket < ActiveRecord::Base
 	:inclusion => { :in => ["pending","booked","cancelled","viewing","used","invalid"] },
 	:presence => true
 
+	validates :user_role,
+	:inclusion=> { :in =>["artist","crowd"] },
+	:presence=>true
+
+	validates :opentok_role,
+	:inclusion => { :in => [ "subscriber", "moderator", "publisher" ]},
+	:presence => true
+
+
 	validate :validate_ticket_price
 
 	validate :validate_ticket_booking
 
 	def validate_ticket_booking
-		errors.add(:no_tickets_available, "All the tickets are sold out !!!")	if (Ticket.where(:event_id=>self.event_id,:status=>["pending","booked","cancelled","viewing","used"]).count.to_i) >= self.event.total_seats.to_i
+		errors.add(:no_tickets_available, "All the tickets are sold out !!!")	if (Ticket.where(:user_role=>'artist',:event_id=>self.event_id,:status=>["pending","booked","cancelled","viewing","used"]).count.to_i) >= self.event.total_seats.to_i
 	end
 
 
@@ -51,8 +64,16 @@ class Ticket < ActiveRecord::Base
 	end
 
 	def self.persist_fields
-		['user_id', 'event_id', 'ticket_token', 'booked_at', 'payment_txn_id', 'discount_token', 'selling_price', 'status']
+		['user_id', 'event_id', 'ticket_token', 'booked_at', 'payment_txn_id', 'discount_token', 'selling_price', 'status','opentok_role','used_by_user_id']
 	end
+  ## Initialization
+  after_initialize :init
+
+  def init
+    self.user_role = 'crowd' if self.user_role.blank?   
+    self.selling_price=0 if self.selling_price.blank? 
+    self.opentok_role=OpenTok::RoleConstants::SUBSCRIBER if self.opentok_role.blank?
+  end
 
 
 end

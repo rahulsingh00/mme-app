@@ -1,13 +1,13 @@
 class Event < ActiveRecord::Base
 
-	DEFAULT_FIELDS_TO_DISPLAY = ['id', 'user_id', 'title', 'description', 'venue', 'total_seats', 'event_type','start_time','end_time','price_per_seat','available_seats']
+	DEFAULT_FIELDS_TO_DISPLAY = ['id', 'user_id', 'title', 'description','image', 'total_seats', 'event_type','start_time','end_time','price_per_seat','available_seats','artist_avatar','artist_first_name','artist_last_name','opentok_session_id']
 
 	before_save :set_default
 
 	def set_default
-		self.total_seats =0 if (self.total_seats.blank? || self.total_seats <0)
-		self.price_per_seat=0 if self.price_per_seat.blank? 
-
+		self.total_seats =1 if (self.total_seats.blank? || self.total_seats <=0)
+		self.price_per_seat=0 if self.price_per_seat.blank?
+		#		self.opentok_session_id = create_opentok_session if self.opentok_session_id.blank?
 	end
 
 	def attributes
@@ -17,12 +17,14 @@ class Event < ActiveRecord::Base
 	## associations ##
 	belongs_to :user
 	has_many :tickets
+	has_many :opentok_details
+	has_many :hangout_medias
 
 	## validations ##
-	validates :venue,
-	:presence => true,
-	:length => {:maximum => 512, :too_long => "%{count} characters is the maximum allowed"},
-	:uniqueness => {:case_sensitive => false}
+	#validates :venue,
+	#:presence => true,
+	#:length => {:maximum => 512, :too_long => "%{count} characters is the maximum allowed"},
+	#:uniqueness => {:case_sensitive => false}
 
 	validates :description,
 	:presence =>true ,
@@ -31,6 +33,10 @@ class Event < ActiveRecord::Base
 	validates :title,
 	:presence => true,
 	:length => {:maximum => 256, :too_long => "%{count} characters is the maximum allowed"}
+
+	validates :opentok_session_id,
+	:presence=>true,
+	:length=>{:maximum=>512, :too_long=>"%{count} characters is the maximum allowed"}
 
 	# 0-Active; 1-Inactive(Deleted)
 	validates :trashed, :inclusion => { :in => [0, 1] }, :presence => true
@@ -50,18 +56,31 @@ class Event < ActiveRecord::Base
 	end
 
 	def available_seats
-		self.total_seats-Ticket.where(:event_id=>self.id,:status=>["pending","booked","cancelled","viewing","used"]).count
+		self.total_seats-Ticket.where(:user_role=>'crowd',:event_id=>self.id,:status=>["pending","booked","cancelled","viewing","used"]).count
+	end
+
+	def artist_avatar
+		@user.avatar
+	end
+
+	def artist_first_name
+		@user.first_name
+	end
+
+	def artist_last_name
+		@user.last_name
 	end
 
 	def self.persist_fields
-		['user_id', 'title', 'description', 'venue', 'total_seats', 'event_type','start_time','end_time','price_per_seat']
+		[ 'user_id', 'title', 'description', 'venue','image', 'total_seats', 'event_type','start_time','end_time','price_per_seat' ]
 	end
 
 	## Initialization
 	after_initialize :init
 
 	def init
-		self.trashed = 0 if self.trashed.blank?
+		self.trashed = 0 if self.trashed.blank?		
+		@user=self.user
 	end
 
 end
