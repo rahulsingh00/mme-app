@@ -1,3 +1,4 @@
+require 'sidekiq/web'
 Rails.application.routes.draw do
   devise_for :admin_users, ActiveAdmin::Devise.config
   ActiveAdmin.routes(self)
@@ -57,4 +58,5 @@ Rails.application.routes.draw do
   #   end
   mount GrapeSwaggerRails::Engine => '/swagger'
   mount API => '/'
+  mount Sidekiq::Web, at: '/sidekiq'
 end
