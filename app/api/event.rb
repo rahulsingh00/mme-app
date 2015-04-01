@@ -1,15 +1,16 @@
 require 'api_extension'
 require 'api_decorator'
+
 class Event < Grape::API
 
   helpers RestHelpers
   # use ApiDecorator
 
   #version 'v1', :using => :header, :vendor => 'mme', :format => :json, :strict => true
-  # before do
-  #   header['Access-Control-Allow-Origin'] = '*'
-  #   header['Access-Control-Request-Method'] = '*'
-  # end
+  before do
+    header['Access-Control-Allow-Origin'] = '*'
+    header['Access-Control-Request-Method'] = '*'
+  end
 
   # rescue_from :all do |error|
   #   logger.error "API << #{env['REQUEST_METHOD']} #{env['PATH_INFO']} -- #{error.class.name} -- #{error.message}"
@@ -53,11 +54,8 @@ class Event < Grape::API
         #conditions << 'trashed = 0'
         all_conditions = conditions.join(' AND ')
 
-        event_list = VwEvent.all(
-        :conditions => [all_conditions, arguments],
+        event_list = VwEvent.where(all_conditions, arguments).order('start_time')
         #:limit => result_size,
-        :order => "start_time"
-        )
       else
         event_hash = VwEvent.find_all_by_id(event_ids).index_by(&:id)
         # maintaining the order
@@ -169,7 +167,7 @@ class Event < Grape::API
       conditions, arguments = ["user_id = :user_id"], {:user_id => user_id}
       all_conditions = conditions.join(' AND ')
 
-      events_list = VwEvent.all(:conditions => [all_conditions, arguments],  :order => "start_time")
+      events_list = VwEvent.where(all_conditions, arguments).order("start_time")
       {:events => events_list}
     end
 

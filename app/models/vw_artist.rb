@@ -4,12 +4,12 @@ class VwArtist < ActiveRecord::Base
   'avatar', 'bg_image', 'artist_card_bg_image' , 'bio', 'desc', 'user_type', 'stage_name','phase_id' ,'images','stats','crowd_role_chosen']
 
   #associations
-  has_many :supporting_crowds, :class_name=>'ArtistCrowdSupportLevel' , :foreign_key=>'artist_id', :conditions => ['trashed = ?', 0]
-  has_many :supported_artists, :class_name=>'ArtistCrowdSupportLevel' , :foreign_key=>'crowd_id',:conditions => ['trashed = ?', 0]
+  has_many :supporting_crowds, -> { where('trashed = ?', 0) }, :class_name=>'ArtistCrowdSupportLevel' , :foreign_key=>'artist_id'
+  has_many :supported_artists, -> { where('trashed = ?', 0) }, :class_name=>'ArtistCrowdSupportLevel' , :foreign_key=>'crowd_id'
 
   has_many :supporting_crowd_details, :class_name=> 'VwCrowdSupporter' , :foreign_key=>'artist_id'
 
-  
+
 
   def attributes
     @display_fields ||= DEFAULT_FIELDS_TO_DISPLAY.to_ahash
@@ -33,7 +33,7 @@ class VwArtist < ActiveRecord::Base
     crowd_levles_fin
   end
 
-  def stats  	
+  def stats
   	{:likes=>self.likes.to_i,:shares=>self.shares.to_i,:plays=>self.plays.to_i,:total_tickets=>self.total_tickets.to_i,:number_of_supporters=>self.number_of_supporters.to_i,:pledged_amount=>self.pledged_amount,:goal_amount=>self.goal_amount,:sharing_goal=>self.sharing_goal,:users_shared=>self.users_shared.to_i}
   end
 
